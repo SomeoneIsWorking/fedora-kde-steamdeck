@@ -1,45 +1,27 @@
 #!/bin/bash
+set -euo pipefail
 
-# Detect the real user
 REAL_USER=${SUDO_USER:-$USER}
 REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
-echo "Uninstalling Steam Gamemode setup for user: $REAL_USER"
+echo "Cleaning up..."
 
-# 1. STOP AND REMOVE SYSTEMD SERVICE (if it exists)
-echo "Removing background services..."
-sudo systemctl stop steamos-autologin-helper 2>/dev/null
-sudo systemctl disable steamos-autologin-helper 2>/dev/null
-sudo rm -f /etc/systemd/system/steamos-autologin-helper.service
-sudo systemctl daemon-reload
+# Remove session entry created by install.sh
+sudo rm -f /usr/share/wayland-sessions/steam-picker.desktop
 
-# 2. REMOVE BINARIES AND HELPERS
-echo "Removing helper scripts..."
-sudo rm -f /usr/bin/steamos-priv-helper
+# Remove launcher shortcut created by install.sh
+rm -f "$REAL_HOME/.local/share/applications/switch-to-gamemode.desktop"
+
+# Remove session state used by install.sh
+rm -f "$REAL_HOME/.gamemode-session-flag"
+
+# Remove scripts created by install.sh
+sudo rm -f /usr/bin/steamos-switch-to-steam
+sudo rm -f /usr/bin/steamos-session-picker
 sudo rm -f /usr/bin/steamos-session-select
 
-# 3. REMOVE SESSION DEFINITIONS
-echo "Removing Wayland session files..."
-sudo rm -f /usr/share/wayland-sessions/steam-gamemode.desktop
-
-# 4. REMOVE SDDM CONFIGURATIONS
-echo "Reverting SDDM configurations..."
-sudo rm -f /etc/sddm.conf.d/zz-steamos-autologin.conf
-# Note: We don't delete /var/lib/sddm/state.conf but we can reset it to plasma
-if [ -f /var/lib/sddm/state.conf ]; then
-    sudo sed -i 's/Session=.*/Session=plasma/' /var/lib/sddm/state.conf
+if [[ -d "$REAL_HOME/.local/share/applications" ]]; then
+    sudo -u "$REAL_USER" update-desktop-database "$REAL_HOME/.local/share/applications/"
 fi
 
-# 5. REMOVE SUDOERS RULE
-echo "Removing sudoers permissions..."
-sudo rm -f /etc/sudoers.d/gamemode-switch
-
-# 6. REMOVE DESKTOP SHORTCUTS
-echo "Removing application shortcuts..."
-rm -f "$REAL_HOME/.local/share/applications/switch-to-gamemode.desktop"
-sudo update-desktop-database "$REAL_HOME/.local/share/applications/" 2>/dev/null
-
-echo "------------------------------------------------"
-echo "Uninstall complete."
-echo "Note: gamescope was not uninstalled. Use 'sudo dnf remove gamescope' if desired."
-echo "It is recommended to restart SDDM or reboot now."
+echo "Cleanup complete."
