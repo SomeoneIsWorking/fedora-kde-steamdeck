@@ -13,7 +13,16 @@ set -euo pipefail
 
 STATE_FILE="$HOME/.gamemode-session-flag"
 if [[ -f "$STATE_FILE" ]]; then
-    exec gamescope -e -f --hide-cursor-delay 3000 -- steam -gamepadui -steamos3
+    LOG_FILE="$HOME/.local/state/steamos-session-picker.log"
+    mkdir -p "$(dirname "$LOG_FILE")"
+
+    # Force composition and disable HDR signaling for cleaner remote-stream colors.
+    gamescope -e -f --force-composition --sdr-gamut-wideness 0 --hide-cursor-delay 3000 -- steam -gamepadui -steamos3 >>"$LOG_FILE" 2>&1
+    EXIT_CODE=$?
+
+    echo "$(date -Is) gamescope exited with code ${EXIT_CODE}, falling back to Plasma" >>"$LOG_FILE"
+    rm -f "$STATE_FILE"
+    exec startplasma-wayland
 else
     exec startplasma-wayland
 fi
