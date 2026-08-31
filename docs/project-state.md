@@ -1,5 +1,11 @@
 # Project state
 
+## Comparison baseline
+
+The baseline is a stock Fedora KDE desktop session where Steam and Gamescope are launched and exited
+manually. This project intends a reversible SteamOS-like session choice that enters fullscreen Steam
+Gamepad UI, logs the run, returns cleanly to Plasma, and can be completely uninstalled.
+
 ## Current focus
 
 S004 is the current focus.
